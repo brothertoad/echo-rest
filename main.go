@@ -51,9 +51,12 @@ func postBlock(c echo.Context, db *sql.DB) error {
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	insertId, err := result.LastInsertId()
+	numRows, err := result.RowsAffected()
 	if err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
-	return c.String(http.StatusOK, fmt.Sprintf("%d", insertId))
+	if numRows != 1 {
+		// should not happen
+	}
+	return c.String(http.StatusOK, "")
 }
