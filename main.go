@@ -38,6 +38,7 @@ func getRawBlock(c echo.Context, db *sql.DB) error {
 		block.Contents = ""
 		block.ModTime = time.Now()
 	}
+	fmt.Printf("getRawBlock: returning %+v\n", block)
 	return c.JSON(http.StatusOK,  block)
 }
 
