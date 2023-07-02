@@ -9,7 +9,6 @@ import (
 	"github.com/labstack/echo/v4"
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/brothertoad/btu"
-	"github.com/brothertoad/echo-rest/model"
 )
 
 func main() {
@@ -28,7 +27,7 @@ func main() {
 }
 
 func getBlock(c echo.Context, db *sql.DB) error {
-	block := new(model.BlockRequest)
+	block := new(BlockRequest)
 	if err := c.Bind(block); err != nil {
 		return err
 	}
@@ -43,7 +42,7 @@ func getBlock(c echo.Context, db *sql.DB) error {
 }
 
 func postBlock(c echo.Context, db *sql.DB) error {
-	block := new(model.BlockRequest)
+	block := new(BlockRequest)
 	if err := c.Bind(block); err != nil {
 		return err
 	}
