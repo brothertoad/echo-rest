@@ -13,10 +13,10 @@ import (
 )
 
 func main() {
-	server()
+	serveCommand()
 }
 
-func server() {
+func serveCommand() {
 	db, err := sql.Open("pgx", os.Getenv("REST_DB_URL"))
 	btu.CheckError(err)
 	defer db.Close()
