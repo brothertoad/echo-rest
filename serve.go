@@ -4,12 +4,10 @@ import (
   "database/sql"
   "fmt"
   "net/http"
-  "os"
   _ "github.com/jackc/pgx/stdlib"
   "github.com/labstack/echo/v4"
   "github.com/labstack/echo/v4/middleware"
   "github.com/urfave/cli/v2"
-  "github.com/brothertoad/btu"
 )
 
 var serveCommand = cli.Command {
@@ -23,8 +21,7 @@ var serveCommand = cli.Command {
 
 func doServe(c *cli.Context) error {
   port := c.Int("port")
-  db, err := sql.Open("pgx", os.Getenv("REST_DB_URL"))
-	btu.CheckError(err)
+  db := openDB()
 	defer db.Close()
 
 	e := echo.New()

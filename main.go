@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 	"github.com/urfave/cli/v2"
+	"github.com/brothertoad/btu"
 )
 
 func main() {
@@ -15,8 +16,7 @@ func main() {
     Usage: "a REST service, also used to manually get and put",
 		// TASK: Add log-level flag
     Commands: []*cli.Command {
-      // &command.CreateCommand,
-      // &command.RefreshCommand,
+			&getCommand,
       &serveCommand,
     },
     // Before: command.Init,
@@ -24,10 +24,16 @@ func main() {
   app.Run(os.Args)
 }
 
+func openDB() *sql.DB {
+	db, err := sql.Open("pgx", os.Getenv("REST_DB_URL"))
+	btu.CheckError(err)
+	return db
+}
+
 func getBlock(db *sql.DB, block *BlockRequest) error {
 	err := db.QueryRow("select contents, modTime from blocks where name = $1 order by modTime desc limit 1", block.Name).Scan(&block.Contents, &block.ModTime)
 	if err != nil {
-		// If there was an error, just assume we are creating a new block, so just return an empty one.
+		// If there was an error, assume we are creating a new block, so just return an empty one.
 		block.Contents = ""
 		block.ModTime = time.Now()
 	}
