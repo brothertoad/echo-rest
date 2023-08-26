@@ -3,11 +3,24 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
+	"github.com/urfave/cli/v2"
 )
 
 func main() {
-	doServe()
+	app := &cli.App {
+    Name: "echo-rest",
+    Compiled: time.Now(),
+    Usage: "a REST service, also used to manually get and put",
+    Commands: []*cli.Command {
+      // &command.CreateCommand,
+      // &command.RefreshCommand,
+      &serveCommand,
+    },
+    // Before: command.Init,
+  }
+  app.Run(os.Args)
 }
 
 func getBlock(db *sql.DB, block *BlockRequest) error {

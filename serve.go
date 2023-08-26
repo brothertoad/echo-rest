@@ -4,12 +4,20 @@ import (
   "database/sql"
   "net/http"
   "os"
+  _ "github.com/jackc/pgx/stdlib"
   "github.com/labstack/echo/v4"
   "github.com/labstack/echo/v4/middleware"
+  "github.com/urfave/cli/v2"
   "github.com/brothertoad/btu"
 )
 
-func doServe() {
+var serveCommand = cli.Command {
+  Name: "serve",
+  Usage: "run as a REST service",
+  Action: doServe,
+}
+
+func doServe(c *cli.Context) error {
   db, err := sql.Open("pgx", os.Getenv("REST_DB_URL"))
 	btu.CheckError(err)
 	defer db.Close()
@@ -25,7 +33,7 @@ func doServe() {
 	})
 	// Should specify port in some kind of configuration.
 	e.Logger.Fatal(e.Start(":9903"))
-  // return nil
+  return nil
 }
 
 func getBlockForREST(c echo.Context, db *sql.DB) error {
