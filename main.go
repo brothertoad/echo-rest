@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 	"time"
 	"github.com/labstack/echo/v4"
@@ -10,6 +9,16 @@ import (
 
 func main() {
 	doServe()
+}
+
+func fetchBlock(db *sql.DB, block *BlockRequest) error {
+	err := db.QueryRow("select contents, modTime from blocks where name = $1 order by modTime desc limit 1", block.Name).Scan(&block.Contents, &block.ModTime)
+	if err != nil {
+		// If there was an error, just assume we are creating a new block, so just return an empty one.
+		block.Contents = ""
+		block.ModTime = time.Now()
+	}
+	return nil
 }
 
 func getBlock(c echo.Context, db *sql.DB) error {
@@ -23,7 +32,6 @@ func getBlock(c echo.Context, db *sql.DB) error {
 		block.Contents = ""
 		block.ModTime = time.Now()
 	}
-	fmt.Printf("getBlock: returning %+v\n", block)
 	return c.JSON(http.StatusOK,  block)
 }
 
@@ -43,6 +51,5 @@ func postBlock(c echo.Context, db *sql.DB) error {
 	if numRows != 1 {
 		// should not happen
 	}
-	fmt.Printf("postBlock: status OK\n")
 	return c.String(http.StatusOK, "")
 }
