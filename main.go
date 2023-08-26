@@ -13,6 +13,7 @@ func main() {
     Name: "echo-rest",
     Compiled: time.Now(),
     Usage: "a REST service, also used to manually get and put",
+		// TASK: Add log-level flag
     Commands: []*cli.Command {
       // &command.CreateCommand,
       // &command.RefreshCommand,

@@ -2,6 +2,7 @@ package main
 
 import (
   "database/sql"
+  "fmt"
   "net/http"
   "os"
   _ "github.com/jackc/pgx/stdlib"
@@ -14,10 +15,14 @@ import (
 var serveCommand = cli.Command {
   Name: "serve",
   Usage: "run as a REST service",
+  Flags: []cli.Flag {
+    &cli.IntFlag {Name: "port", Aliases: []string{"p"}, Value: 9903},
+  },
   Action: doServe,
 }
 
 func doServe(c *cli.Context) error {
+  port := c.Int("port")
   db, err := sql.Open("pgx", os.Getenv("REST_DB_URL"))
 	btu.CheckError(err)
 	defer db.Close()
@@ -31,8 +36,7 @@ func doServe(c *cli.Context) error {
 	e.POST("/block", func(c echo.Context) error {
 		return putBlockForREST(c, db)
 	})
-	// Should specify port in some kind of configuration.
-	e.Logger.Fatal(e.Start(":9903"))
+	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", port)))
   return nil
 }
 
