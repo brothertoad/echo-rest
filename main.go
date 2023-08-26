@@ -18,6 +18,7 @@ func main() {
     Commands: []*cli.Command {
 			&getCommand,
 			&putCommand,
+			&listCommand,
       &serveCommand,
     },
   }
@@ -54,4 +55,21 @@ func putBlock(db *sql.DB, block *BlockRequest) error {
 		return fmt.Errorf("More than one row (%d) affected by insert\n", numRows)
 	}
 	return nil
+}
+
+func listBlockNames(db *sql.DB) []string {
+	rows, err := db.Query("select distinct name from blocks")
+	// We'll go ahead and exit if this call failed, since we assume we're NOT being
+	// called from a web service.
+	btu.CheckError(err)
+	defer rows.Close()
+	names := make([]string, 0)
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			btu.Fatal(err.Error())
+		}
+		names = append(names, name)
+	}
+	return names
 }
