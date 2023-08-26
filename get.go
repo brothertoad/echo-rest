@@ -16,7 +16,7 @@ var getCommand = cli.Command {
 func doGet(c *cli.Context) error {
   // We need a name, and possibly a file to write to.
   if c.Args().Len() < 1 || c.Args().Len() > 2 {
-    btu.Fatal("Usage: echo-rest get name <file to write to>.\n")
+    btu.Fatal("Usage: echo-rest get name <file to write to>\n")
   }
   db := openDB();
   defer db.Close()
@@ -28,7 +28,7 @@ func doGet(c *cli.Context) error {
     err := os.WriteFile(c.Args().Get(1), []byte(block.Contents), 0644)
     btu.CheckError(err)
   } else {
-    fmt.Printf("%s\n", block.Contents)
+    fmt.Printf("%s", block.Contents)
   }
   return nil
 }

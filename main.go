@@ -17,9 +17,9 @@ func main() {
 		// TASK: Add log-level flag
     Commands: []*cli.Command {
 			&getCommand,
+			&putCommand,
       &serveCommand,
     },
-    // Before: command.Init,
   }
   app.Run(os.Args)
 }
