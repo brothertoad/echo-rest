@@ -3,7 +3,10 @@ package main
 import (
   "database/sql"
   "fmt"
+  "math/rand"
   "net/http"
+  "strings"
+  "time"
   _ "github.com/jackc/pgx/stdlib"
   "github.com/labstack/echo/v4"
   "github.com/labstack/echo/v4/middleware"
@@ -27,6 +30,12 @@ func doServe(c *cli.Context) error {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.CORS()) // allow all requests
+  e.GET("/list/:name", func(c echo.Context) error {
+		return getListForREST(c, db, false)
+	})
+  e.GET("/randomlist/:name", func(c echo.Context) error {
+		return getListForREST(c, db, true)
+	})
 	e.GET("/block/:name", func(c echo.Context) error {
 		return getBlockForREST(c, db)
 	})
@@ -35,6 +44,34 @@ func doServe(c *cli.Context) error {
 	})
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", port)))
   return nil
+}
+
+func getListForREST(c echo.Context, db *sql.DB, randomize bool) error {
+	block := new(BlockRequest)
+	if err := c.Bind(block); err != nil {
+		return err
+	}
+  getBlock(db, block)
+  response := new(ListResponse)
+  response.Name = block.Name
+  response.ModTime = block.ModTime
+  rawList := strings.Split(block.Contents, "\n")
+  response.Items = make([]string, 0, len(rawList))
+  for _, rawItem := range(rawList) {
+    item := strings.TrimSpace(rawItem)
+    if len(item) > 0 && !strings.HasPrefix(item, "#") {
+      response.Items = append(response.Items, item)
+    }
+  }
+  if randomize {
+    // logic taken from https://www.calhoun.io/how-to-shuffle-arrays-and-slices-in-go/
+    r := rand.New(rand.NewSource(time.Now().Unix()))
+    for n := len(response.Items); n > 0; n-- {
+      randIndex := r.Intn(n)
+      response.Items[n-1], response.Items[randIndex] = response.Items[randIndex], response.Items[n-1]
+    }
+  }
+	return c.JSON(http.StatusOK, response)
 }
 
 func getBlockForREST(c echo.Context, db *sql.DB) error {

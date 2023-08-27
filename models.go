@@ -9,3 +9,9 @@ type BlockRequest struct {
   Contents string `json:"contents" form:"contents" param:"contents"`
   ModTime time.Time `json:"modTime" form:"modTime" param:"modTime"`
 }
+
+type ListResponse struct {
+  Name string `json:"name" form:"name" param:"name"`
+  Items []string `json:"items" form:"items" param:"items"`
+  ModTime time.Time `json:"modTime" form:"modTime" param:"modTime"`
+}
