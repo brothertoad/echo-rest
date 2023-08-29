@@ -28,8 +28,10 @@ func doServe(c *cli.Context) error {
 	defer db.Close()
 
 	e := echo.New()
-	e.Use(middleware.Logger())
-	e.Use(middleware.CORS()) // allow all requests
+  e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+    Format: "${time_rfc3339} ${method} uri=${uri} status=${status} error=${error}\n",
+  }))
+  e.Use(middleware.CORS()) // allow all requests
   e.GET("/list/:name", func(c echo.Context) error {
 		return getListForREST(c, db, false)
 	})
