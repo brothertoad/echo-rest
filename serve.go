@@ -32,6 +32,8 @@ func doServe(c *cli.Context) error {
     Format: "${time_rfc3339} ${method} uri=${uri} status=${status} error=${error}\n",
   }))
   e.Use(middleware.CORS()) // allow all requests
+
+  // routes for blocks
   e.GET("/list/:name", func(c echo.Context) error {
 		return getListForREST(c, db, false)
 	})
@@ -44,6 +46,11 @@ func doServe(c *cli.Context) error {
 	e.POST("/block", func(c echo.Context) error {
 		return putBlockForREST(c, db)
 	})
+
+  // routes for weight
+  e.POST("/weight/daily/add", func(c echo.Context) error {
+    return addDailyWeight(c, db)
+  })
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", port)))
   return nil
 }
