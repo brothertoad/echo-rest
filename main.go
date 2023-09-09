@@ -20,6 +20,7 @@ func main() {
 			&putCommand,
 			&listCommand,
       &serveCommand,
+			&weightCommand,
     },
   }
   app.Run(os.Args)
