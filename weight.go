@@ -36,6 +36,8 @@ type daily struct {
   weight int
 }
 
+// Loads seed weights into the weightDaily and weightSum tables.
+// We assume the input file is sorted.
 func doWeight(c *cli.Context) error {
   // We need a file name.
   if c.Args().Len() != 1 {
@@ -55,14 +57,23 @@ func doWeight(c *cli.Context) error {
       continue
     }
     var d daily
-    d.date, _ = strconv.Atoi(parts[0])
+    d.date = btu.Atoi(parts[0])
     d.weight = weightStringToInt(parts[1])
     dailies = append(dailies, d)
   }
   fmt.Printf("Found %d daily weights.\n", len(dailies))
+  loadDailies(dailies)
+  return nil
+}
+
+func loadDailies(dailies []daily) {
   db := openDB()
   defer db.Close()
-  return nil
+  for _, d := range(dailies) {
+    _, err := db.Exec("insert into weightDaily (date, weight) values ($1, $2)", d.date, d.weight)
+    btu.CheckError(err)
+  }
+  // Need to update sums.
 }
 
 func weightStringToInt(s string) int {
