@@ -1,6 +1,9 @@
+drop table if exists weightDaily;
+drop table if exists weightSum;
+
 create table weightDaily (
-  date integer not null,
-  weight integer
+  date integer not null unique,
+  weight integer not null
 );
 
 create table weightSum (
@@ -8,5 +11,6 @@ create table weightSum (
   year integer,
   count integer,
   total integer,
-  avg integer
+  avg integer,
+  unique (month, year)
 );

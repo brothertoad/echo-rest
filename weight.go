@@ -14,6 +14,10 @@ var weightCommand = cli.Command {
   Action: doWeight,
 }
 
+///////////////////////////////////////////
+// Logic for web
+///////////////////////////////////////////
+
 func addDailyWeight(c echo.Context, db *sql.DB) error {
   date := c.FormValue("date")
   weight := c.FormValue("weight")
@@ -21,10 +25,16 @@ func addDailyWeight(c echo.Context, db *sql.DB) error {
   return nil
 }
 
+///////////////////////////////////////////
+// Logic for weight command
+///////////////////////////////////////////
+
 func doWeight(c *cli.Context) error {
   // We need a file name.
   if c.Args().Len() != 1 {
     btu.Fatal("Usage: echo-rest weight file\n")
   }
+  db := openDB();
+  defer db.Close()
   return nil
 }
