@@ -3,6 +3,8 @@ package main
 import (
   "database/sql"
   "fmt"
+  "strconv"
+  "strings"
   "github.com/labstack/echo/v4"
   "github.com/urfave/cli/v2"
   "github.com/brothertoad/btu"
@@ -29,12 +31,43 @@ func addDailyWeight(c echo.Context, db *sql.DB) error {
 // Logic for weight command
 ///////////////////////////////////////////
 
+type daily struct {
+  date int
+  weight int
+}
+
 func doWeight(c *cli.Context) error {
   // We need a file name.
   if c.Args().Len() != 1 {
     btu.Fatal("Usage: echo-rest weight file\n")
   }
-  db := openDB();
+  // read input file into a string, then split at new lines
+  s := btu.ReadFileS(c.Args().Get(0))
+  lines := strings.Split(s, "\n")
+  fmt.Printf("Found %d lines.\n", len(lines))
+  dailies := make([]daily, 0, len(lines))
+  for _, line := range(lines) {
+    if len(line) == 0 {
+      continue
+    }
+    parts := strings.Split(line, ",")
+    if len(parts) != 2 {
+      continue
+    }
+    var d daily
+    d.date, _ = strconv.Atoi(parts[0])
+    d.weight = weightStringToInt(parts[1])
+    dailies = append(dailies, d)
+  }
+  fmt.Printf("Found %d daily weights.\n", len(dailies))
+  db := openDB()
   defer db.Close()
   return nil
+}
+
+func weightStringToInt(s string) int {
+  parts := strings.Split(s, ".")
+  withoutDecimal := parts[0] + parts[1]
+  w, _ := strconv.Atoi(withoutDecimal)
+  return w
 }
