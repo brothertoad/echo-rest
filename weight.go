@@ -28,6 +28,44 @@ func addDailyWeight(c echo.Context, db *sql.DB) error {
 }
 
 ///////////////////////////////////////////
+// Common functions
+///////////////////////////////////////////
+
+func updateMonth(db *sql.DB, month, year int, refreshYear bool) {
+  d0 := year * 10000 + month * 100  // start date
+  d1 := d0 + 99  // end date
+  rows, err := db.Query("select weight from weightDaily where date >= $1 and date <= $2", d0, d1)
+  btu.CheckError(err)
+  defer rows.Close()
+  sum := 0
+  count := 0
+  for rows.Next() {
+    var weight int
+		if err := rows.Scan(&weight); err != nil {
+			btu.Fatal(err.Error())
+		}
+    sum += weight
+    count++
+  }
+  avg := sum / count
+  // Try to update first - if that fails, then insert.
+  // Use this order because updates will be much more common then inserts.
+  _, err = db.Exec("update weightSum set sum = $1, count = $2, avg = $3 where year = $4 and month = $5", sum, count, avg, year, month)
+  if err != nil {
+    // Try insert
+    _, err = db.Exec("insert into weightSum (month, year, sum, count, avg) values ($1, $2, $3, $4, $5)", month, year, sum, count, avg)
+    btu.CheckError(err)
+  }
+  if refreshYear {
+    updateYear(db, year)
+  }
+}
+
+func updateYear(db *sql.DB, year int) {
+
+}
+
+///////////////////////////////////////////
 // Logic for weight command
 ///////////////////////////////////////////
 
