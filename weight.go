@@ -19,6 +19,8 @@ var weightCommand = cli.Command {
 // Logic for web
 ///////////////////////////////////////////
 
+// from browser: date is 2023-09-08 (string) and weight is 276.0 (string)
+
 func addDailyWeight(c echo.Context, db *sql.DB) error {
   date := c.FormValue("date")
   weight := c.FormValue("weight")
@@ -62,6 +64,14 @@ func updateMonth(db *sql.DB, month, year int, refreshYear bool) {
 
 func updateYear(db *sql.DB, year int) {
 
+}
+
+// String is in format yyyymmdd
+func parseDateString(s string) (int, int, int) {
+  year := btu.Atoi(s[0:3])
+  month := btu.Atoi(s[4:5])
+  day := btu.Atoi(s[6:7])
+  return year, month, day
 }
 
 ///////////////////////////////////////////
