@@ -3,7 +3,6 @@ package main
 import (
   "database/sql"
   "fmt"
-  "strconv"
   "strings"
   "github.com/labstack/echo/v4"
   "github.com/urfave/cli/v2"
@@ -117,6 +116,5 @@ func loadDailies(dailies []daily) {
 func weightStringToInt(s string) int {
   parts := strings.Split(s, ".")
   withoutDecimal := parts[0] + parts[1]
-  w, _ := strconv.Atoi(withoutDecimal)
-  return w
+  return btu.Atoi(withoutDecimal)
 }
