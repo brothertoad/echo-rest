@@ -123,6 +123,13 @@ func loadDailies(dailies []daily) {
   // Need to update sums.
 }
 
+func incrementMonth(year, month int) (int, int) {
+  if month == 12 {
+    return year + 1, 1
+  }
+  return year, month + 1
+}
+
 func weightStringToInt(s string) int {
   parts := strings.Split(s, ".")
   withoutDecimal := parts[0] + parts[1]
