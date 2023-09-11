@@ -35,7 +35,7 @@ func addDailyWeight(c echo.Context, db *sql.DB) error {
   // Try to insert first.  If that fails, try to update.
   _, err = db.Exec("insert into weightDaily (date, weight) values ($1, $2)", date, weight)
   if err != nil {
-    fmt.Printf("Err from insert is %v\n", err)
+    // fmt.Printf("Err from insert is %v\n", err)
     _, err := db.Exec("update weightDaily set weight = $1 where date = $2", weight, date)
     btu.CheckError(err)
   }
@@ -123,9 +123,9 @@ func parseDate(d int) (int, int, int) {
   return year, month, day
 }
 
-// String is in format nnn.n.
-// Should verify this, in particular if there is no decimal point.
-// Also verify all characters except the decimal point are digits.
+// String is in format nnn.n.  Decimal point and subsequent digit are optional,
+// but if a decimal point is present, there must be mo more than one digit
+// following it.
 func parseWeightString(s string) (int, error) {
   dpCount := 0
   for _, ch := range(s) {
@@ -139,11 +139,24 @@ func parseWeightString(s string) (int, error) {
   if dpCount > 1 {
     return 0, fmt.Errorf("More than one decimal point in %s\n", s)
   }
-  // OK, we know that the string consists of digits with a possible decimal point.
+  // Note that from here on, we know that the string has only digits and
+  // (possibly) a decimal point, so we can use len to get the length of the
+  // string.
+  // If the string has no decimal point, just multiply by 10.
   if dpCount == 0 {
     return btu.Atoi(s) * 10, nil
   }
-  return btu.Atoi(s[0:3] + s[4:5]), nil
+  n := strings.Index(s, ".")
+  // If the decimal point is at the end, just ignore it and mulitply the rest of the value by 10.
+  if n == (len(s) - 1) {
+    return btu.Atoi(s[0:n]) * 10, nil
+  }
+  // If we have more than one digit after the decimal point, we have a bad value.
+  if n < (len(s) - 2) {
+    return 0, fmt.Errorf("Too many digits after decimal point in %s\n", s)
+  }
+  // OK, we have exactly one digit after the decimal point.  We're good to go.
+  return btu.Atoi(s[0:n] + s[(n+1):(n+2)]), nil
 }
 
 ///////////////////////////////////////////
