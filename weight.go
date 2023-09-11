@@ -66,11 +66,11 @@ func updateYear(db *sql.DB, year int) {
 
 }
 
-// String is in format yyyymmdd
+// String is in format yyyy-mm-dd
 func parseDateString(s string) (int, int, int) {
   year := btu.Atoi(s[0:3])
-  month := btu.Atoi(s[4:5])
-  day := btu.Atoi(s[6:7])
+  month := btu.Atoi(s[5:6])
+  day := btu.Atoi(s[8:9])
   return year, month, day
 }
 
