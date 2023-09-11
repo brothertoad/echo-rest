@@ -63,14 +63,12 @@ func updateMonth(db *sql.DB, month, year int, refreshYear bool) {
   avg := total / count
   // Try to update first - if that fails, then insert.
   // Use this order because updates will be much more common then inserts.
-  fmt.Printf("updateMonth: year %d, month %d, total %d, count %d, avg %d\n", year, month, total, count, avg)
   result, err := db.Exec("update weightSum set total = $1, count = $2, avg = $3 where year = $4 and month = $5", total, count, avg, year, month)
   // If there was no existing row for this year/month, then err will be nil, but the row count will be zero.
   btu.CheckError(err)
   rowsAffected, _ := result.RowsAffected()
   if rowsAffected == 0 {
     // Try insert
-    fmt.Printf("About to insert into weightSum...\n")
     _, err = db.Exec("insert into weightSum (month, year, total, count, avg) values ($1, $2, $3, $4, $5)", month, year, total, count, avg)
     btu.CheckError(err)
   }
