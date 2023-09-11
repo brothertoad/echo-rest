@@ -63,7 +63,28 @@ func updateMonth(db *sql.DB, month, year int, refreshYear bool) {
 }
 
 func updateYear(db *sql.DB, year int) {
-
+  rows, err := db.Query("select sum, count from weightSum where year = $1 and month > 0", year)
+  btu.CheckError(err)
+  defer rows.Close()
+  cumulativeSum := 0
+  total := 0
+  for rows.Next() {
+    var sum, count int
+		if err := rows.Scan(&sum, &count); err != nil {
+			btu.Fatal(err.Error())
+		}
+    cumulativeSum += sum
+    total += count
+  }
+  avg := cumulativeSum / total
+  // Try to update first - if that fails, then insert.
+  // Use this order because updates will be much more common then inserts.
+  _, err = db.Exec("update weightSum set sum = $1, count = $2, avg = $3 where year = $4 and month = 0", cumulativeSum, total, avg, year)
+  if err != nil {
+    // Try insert
+    _, err = db.Exec("insert into weightSum (month, year, sum, count, avg) values ($1, $2, $3, $4, $5)", 0, year, cumulativeSum, total, avg)
+    btu.CheckError(err)
+  }
 }
 
 // String is in format yyyy-mm-dd
