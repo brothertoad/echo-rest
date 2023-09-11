@@ -141,7 +141,7 @@ func parseWeightString(s string) (int, error) {
   }
   // OK, we know that the string consists of digits with a possible decimal point.
   if dpCount == 0 {
-    return btu.Atoi(s), nil
+    return btu.Atoi(s) * 10, nil
   }
   return btu.Atoi(s[0:3] + s[4:5]), nil
 }
