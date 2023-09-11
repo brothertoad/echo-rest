@@ -3,6 +3,7 @@ package main
 import (
   "database/sql"
   "fmt"
+  "net/http"
   "strings"
   "github.com/labstack/echo/v4"
   "github.com/urfave/cli/v2"
@@ -24,20 +25,22 @@ var weightCommand = cli.Command {
 func addDailyWeight(c echo.Context, db *sql.DB) error {
   dateFromForm := c.FormValue("date")
   weightFromForm := c.FormValue("weight")
-  fmt.Printf("date is %v (%T) and weight is %v (%T)\n", dateFromForm, dateFromForm, weightFromForm, weightFromForm)
+  // fmt.Printf("date is %v (%T) and weight is %v (%T)\n", dateFromForm, dateFromForm, weightFromForm, weightFromForm)
   year, month, day := parseDateString(dateFromForm)
-  weight := parseWeightString(weightFromForm)
+  weight, err := parseWeightString(weightFromForm)
+  if err != nil {
+    return c.String(http.StatusBadRequest, err.Error())
+  }
   date := year * 10000 + month * 100 + day
-  fmt.Printf("Year is %d, month is %d, day is %d, date is %d, weight is %d\n", year, month, day, date, weight)
   // Try to insert first.  If that fails, try to update.
-  _, err := db.Exec("insert into weightDaily (date, weight) values ($1, $2)", date, weight)
+  _, err = db.Exec("insert into weightDaily (date, weight) values ($1, $2)", date, weight)
   if err != nil {
     fmt.Printf("Err from insert is %v\n", err)
     _, err := db.Exec("update weightDaily set weight = $1 where date = $2", weight, date)
     btu.CheckError(err)
   }
   updateMonth(db, month, year, true)
-  return nil
+  return c.String(http.StatusOK, "")
 }
 
 ///////////////////////////////////////////
@@ -121,8 +124,26 @@ func parseDate(d int) (int, int, int) {
 }
 
 // String is in format nnn.n.
-func parseWeightString(s string) int {
-  return btu.Atoi(s[0:3] + s[4:5])
+// Should verify this, in particular if there is no decimal point.
+// Also verify all characters except the decimal point are digits.
+func parseWeightString(s string) (int, error) {
+  dpCount := 0
+  for _, ch := range(s) {
+    if (ch < '0' || ch > '9') && ch != '.' {
+      return 0, fmt.Errorf("weight %s is not a number\n", s)
+    }
+    if ch == '.' {
+      dpCount++;
+    }
+  }
+  if dpCount > 1 {
+    return 0, fmt.Errorf("More than one decimal point in %s\n", s)
+  }
+  // OK, we know that the string consists of digits with a possible decimal point.
+  if dpCount == 0 {
+    return btu.Atoi(s), nil
+  }
+  return btu.Atoi(s[0:3] + s[4:5]), nil
 }
 
 ///////////////////////////////////////////
