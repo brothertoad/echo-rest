@@ -22,9 +22,21 @@ var weightCommand = cli.Command {
 // from browser: date is 2023-09-08 (string) and weight is 276.0 (string)
 
 func addDailyWeight(c echo.Context, db *sql.DB) error {
-  date := c.FormValue("date")
-  weight := c.FormValue("weight")
-  fmt.Printf("date is %v (%T) and weight is %v (%T)\n", date, date, weight, weight)
+  dateFromForm := c.FormValue("date")
+  weightFromForm := c.FormValue("weight")
+  fmt.Printf("date is %v (%T) and weight is %v (%T)\n", dateFromForm, dateFromForm, weightFromForm, weightFromForm)
+  year, month, day := parseDateString(dateFromForm)
+  weight := parseWeightString(weightFromForm)
+  date := year * 10000 + month * 100 + day
+  fmt.Printf("Year is %d, month is %d, day is %d, date is %d, weight is %d\n", year, month, day, date, weight)
+  // Try to insert first.  If that fails, try to update.
+  _, err := db.Exec("insert into weightDaily (date, weight) values ($1, $2)", date, weight)
+  if err != nil {
+    fmt.Printf("Err from insert is %v\n", err)
+    _, err := db.Exec("update weightDaily set weight = $1 where date = $2", weight, date)
+    btu.CheckError(err)
+  }
+  updateMonth(db, month, year, true)
   return nil
 }
 
@@ -38,23 +50,28 @@ func updateMonth(db *sql.DB, month, year int, refreshYear bool) {
   rows, err := db.Query("select weight from weightDaily where date >= $1 and date <= $2", d0, d1)
   btu.CheckError(err)
   defer rows.Close()
-  sum := 0
+  total := 0
   count := 0
   for rows.Next() {
     var weight int
 		if err := rows.Scan(&weight); err != nil {
 			btu.Fatal(err.Error())
 		}
-    sum += weight
+    total += weight
     count++
   }
-  avg := sum / count
+  avg := total / count
   // Try to update first - if that fails, then insert.
   // Use this order because updates will be much more common then inserts.
-  _, err = db.Exec("update weightSum set sum = $1, count = $2, avg = $3 where year = $4 and month = $5", sum, count, avg, year, month)
-  if err != nil {
+  fmt.Printf("updateMonth: year %d, month %d, total %d, count %d, avg %d\n", year, month, total, count, avg)
+  result, err := db.Exec("update weightSum set total = $1, count = $2, avg = $3 where year = $4 and month = $5", total, count, avg, year, month)
+  // If there was no existing row for this year/month, then err will be nil, but the row count will be zero.
+  btu.CheckError(err)
+  rowsAffected, _ := result.RowsAffected()
+  if rowsAffected == 0 {
     // Try insert
-    _, err = db.Exec("insert into weightSum (month, year, sum, count, avg) values ($1, $2, $3, $4, $5)", month, year, sum, count, avg)
+    fmt.Printf("About to insert into weightSum...\n")
+    _, err = db.Exec("insert into weightSum (month, year, total, count, avg) values ($1, $2, $3, $4, $5)", month, year, total, count, avg)
     btu.CheckError(err)
   }
   if refreshYear {
@@ -63,7 +80,7 @@ func updateMonth(db *sql.DB, month, year int, refreshYear bool) {
 }
 
 func updateYear(db *sql.DB, year int) {
-  rows, err := db.Query("select sum, count from weightSum where year = $1 and month > 0", year)
+  rows, err := db.Query("select total, count from weightSum where year = $1 and month > 0", year)
   btu.CheckError(err)
   defer rows.Close()
   cumulativeSum := 0
@@ -79,19 +96,22 @@ func updateYear(db *sql.DB, year int) {
   avg := cumulativeSum / total
   // Try to update first - if that fails, then insert.
   // Use this order because updates will be much more common then inserts.
-  _, err = db.Exec("update weightSum set sum = $1, count = $2, avg = $3 where year = $4 and month = 0", cumulativeSum, total, avg, year)
-  if err != nil {
+  result, err := db.Exec("update weightSum set total = $1, count = $2, avg = $3 where year = $4 and month = 0", cumulativeSum, total, avg, year)
+  // If there was no existing row for this year, then err will be nil, but the row count will be zero.
+  btu.CheckError(err)
+  rowsAffected, _ := result.RowsAffected()
+  if rowsAffected == 0 {
     // Try insert
-    _, err = db.Exec("insert into weightSum (month, year, sum, count, avg) values ($1, $2, $3, $4, $5)", 0, year, cumulativeSum, total, avg)
+    _, err = db.Exec("insert into weightSum (month, year, total, count, avg) values ($1, $2, $3, $4, $5)", 0, year, cumulativeSum, total, avg)
     btu.CheckError(err)
   }
 }
 
 // String is in format yyyy-mm-dd
 func parseDateString(s string) (int, int, int) {
-  year := btu.Atoi(s[0:3])
-  month := btu.Atoi(s[5:6])
-  day := btu.Atoi(s[8:9])
+  year := btu.Atoi(s[0:4])
+  month := btu.Atoi(s[5:7])
+  day := btu.Atoi(s[8:10])
   return year, month, day
 }
 
@@ -100,6 +120,11 @@ func parseDate(d int) (int, int, int) {
   month := (d % 10000) / 100
   day := d % 100
   return year, month, day
+}
+
+// String is in format nnn.n.
+func parseWeightString(s string) int {
+  return btu.Atoi(s[0:3] + s[4:5])
 }
 
 ///////////////////////////////////////////
