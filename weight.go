@@ -74,6 +74,13 @@ func parseDateString(s string) (int, int, int) {
   return year, month, day
 }
 
+func parseDate(d int) (int, int, int) {
+  year := d / 10000
+  month := (d % 10000) / 100
+  day := d % 100
+  return year, month, day
+}
+
 ///////////////////////////////////////////
 // Logic for weight command
 ///////////////////////////////////////////
@@ -120,7 +127,21 @@ func loadDailies(dailies []daily) {
     _, err := db.Exec("insert into weightDaily (date, weight) values ($1, $2)", d.date, d.weight)
     btu.CheckError(err)
   }
-  // Need to update sums.
+  // Assume most recent daily is first.  Update months, then years.
+  y0, m0, _ := parseDate(dailies[len(dailies)-1].date)
+  y1, m1, _ := parseDate(dailies[0].date)
+  year := y0
+  month := m0
+  for {
+    updateMonth(db, month, year, false)
+    if year == y1 && month == m1 {
+      break
+    }
+    year, month = incrementMonth(year, month)
+  }
+  for year = y0; year <= y1; year++ {
+    updateYear(db, year)
+  }
 }
 
 func incrementMonth(year, month int) (int, int) {
