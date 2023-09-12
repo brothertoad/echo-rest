@@ -15,3 +15,9 @@ type ListResponse struct {
   Items []string `json:"items" form:"items" param:"items"`
   ModTime time.Time `json:"modTime" form:"modTime" param:"modTime"`
 }
+
+type AvgWeight struct {
+  Month int `json:"month"`
+  Year int `json:"year"`
+  Avg string `json:"avg"`
+}

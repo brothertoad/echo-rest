@@ -4,6 +4,7 @@ import (
   "database/sql"
   "fmt"
   "net/http"
+  "strconv"
   "strings"
   "github.com/labstack/echo/v4"
   "github.com/urfave/cli/v2"
@@ -55,7 +56,24 @@ func getMonthAverages(c echo.Context, db *sql.DB, getLowest bool) error {
 }
 
 func getYearAverages(c echo.Context, db *sql.DB) error {
-  return c.String(http.StatusOK, "")
+  avgWeights := make([]AvgWeight, 0)
+  rows, err := db.Query("select year, avg from weightSum where month = 0 order by year desc")
+  if err != nil {
+    return c.String(http.StatusInternalServerError, "Error getting averages")
+  }
+  defer rows.Close()
+  for rows.Next() {
+    var year int
+    var avg int
+    if err := rows.Scan(&year, &avg); err != nil {
+      return c.String(http.StatusInternalServerError, "Error scanning row")
+    }
+    var avgWeight AvgWeight
+    avgWeight.Year = year
+    avgWeight.Avg = strconv.Itoa(avg / 10) + "." + strconv.Itoa(avg % 10)
+    avgWeights = append(avgWeights, avgWeight)
+  }
+  return c.JSON(http.StatusOK, avgWeights)
 }
 
 ///////////////////////////////////////////
