@@ -46,6 +46,18 @@ func addDailyWeight(c echo.Context, db *sql.DB) error {
   return c.String(http.StatusOK, "")
 }
 
+func getLatestMonths(c echo.Context, db *sql.DB) error {
+  return c.String(http.StatusOK, "")
+}
+
+func getMonthAverages(c echo.Context, db *sql.DB, getLowest bool) error {
+  return c.String(http.StatusOK, "")
+}
+
+func getYearAverages(c echo.Context, db *sql.DB) error {
+  return c.String(http.StatusOK, "")
+}
+
 ///////////////////////////////////////////
 // Common functions
 ///////////////////////////////////////////
