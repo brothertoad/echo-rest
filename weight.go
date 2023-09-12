@@ -48,15 +48,9 @@ func addDailyWeight(c echo.Context, db *sql.DB) error {
 }
 
 func getLatestMonths(c echo.Context, db *sql.DB) error {
-  count := 12
-  countParam := c.QueryParam("count")
-  if countParam != "" {
-    n, err := strconv.Atoi(countParam)
-    if err == nil {
-      count = n
-    } else {
-      return c.String(http.StatusBadRequest, "count parameter can't be converted to a number")
-    }
+  count, err := getCountFromContext(c, 12)
+  if err != nil {
+    return c.String(http.StatusBadRequest, err.Error())
   }
   avgWeights := make([]AvgWeight, 0)
   rows, err := db.Query("select month, year, avg from weightSum order by year desc, month desc limit $1", count)
@@ -81,7 +75,34 @@ func getLatestMonths(c echo.Context, db *sql.DB) error {
 }
 
 func getMonthAverages(c echo.Context, db *sql.DB, getLowest bool) error {
-  return c.String(http.StatusOK, "")
+  count, err := getCountFromContext(c, 12)
+  if err != nil {
+    return c.String(http.StatusBadRequest, err.Error())
+  }
+  queryString := "select month, year, avg from weightsum order by avg desc limit $1"
+  if getLowest {
+    queryString = "select month, year, avg from weightsum order by avg asc limit $1"
+  }
+  avgWeights := make([]AvgWeight, 0)
+  rows, err := db.Query(queryString, count)
+  if err != nil {
+    return c.String(http.StatusInternalServerError, fmt.Sprintf("Error getting month averages: %s", err.Error()))
+  }
+  defer rows.Close()
+  for rows.Next() {
+    var month int
+    var year int
+    var avg int
+    if err := rows.Scan(&month, &year, &avg); err != nil {
+      return c.String(http.StatusInternalServerError, "Error scanning row")
+    }
+    var avgWeight AvgWeight
+    avgWeight.Month = month
+    avgWeight.Year = year
+    avgWeight.Avg = strconv.Itoa(avg / 10) + "." + strconv.Itoa(avg % 10)
+    avgWeights = append(avgWeights, avgWeight)
+  }
+  return c.JSON(http.StatusOK, avgWeights)
 }
 
 func getYearAverages(c echo.Context, db *sql.DB) error {
@@ -103,6 +124,18 @@ func getYearAverages(c echo.Context, db *sql.DB) error {
     avgWeights = append(avgWeights, avgWeight)
   }
   return c.JSON(http.StatusOK, avgWeights)
+}
+
+func getCountFromContext(c echo.Context, defCount int) (int, error) {
+  countParam := c.QueryParam("count")
+  if countParam == "" {
+    return defCount, nil
+  }
+  n, err := strconv.Atoi(countParam)
+  if err != nil {
+    return 0, fmt.Errorf("Error converting count parameter %s to a number: %s", countParam, err.Error())
+  }
+  return n, nil
 }
 
 func weightToString(weight int) string {
