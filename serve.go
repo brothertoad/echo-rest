@@ -51,6 +51,9 @@ func doServe(c *cli.Context) error {
   e.POST("/weight/daily/add", func(c echo.Context) error {
     return addDailyWeight(c, db)
   })
+  e.GET("/weight/latest", func(c echo.Context) error {
+    return getLatest(c, db)
+  })
   e.GET("/weight/latest-months", func(c echo.Context) error {
     return getLatestMonths(c, db)
   })

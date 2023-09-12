@@ -16,6 +16,11 @@ type ListResponse struct {
   ModTime time.Time `json:"modTime" form:"modTime" param:"modTime"`
 }
 
+type DailyWeight struct {
+  Date string `json:"date"`
+  Weight string `json:"weight"`
+}
+
 type AvgWeight struct {
   Month int `json:"month"`
   Year int `json:"year"`

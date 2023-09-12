@@ -47,6 +47,31 @@ func addDailyWeight(c echo.Context, db *sql.DB) error {
   return c.String(http.StatusOK, "")
 }
 
+func getLatest(c echo.Context, db *sql.DB) error {
+  count, err := getCountFromContext(c, 30)
+  if err != nil {
+    return c.String(http.StatusBadRequest, err.Error())
+  }
+  dailyWeights := make([]DailyWeight, 0)
+  rows, err := db.Query("select date, weight from weightDaily order by date desc limit $1", count)
+  if err != nil {
+    return c.String(http.StatusInternalServerError, fmt.Sprintf("Error getting latest weights: %s", err.Error()))
+  }
+  defer rows.Close()
+  for rows.Next() {
+    var date int
+    var weight int
+    if err := rows.Scan(&date, &weight); err != nil {
+      return c.String(http.StatusInternalServerError, fmt.Sprintf("Error scanning row from dailyWeight: %s", err.Error()))
+    }
+    var dailyWeight DailyWeight
+    dailyWeight.Date = dateToString(date)
+    dailyWeight.Weight = weightToString(weight)
+    dailyWeights = append(dailyWeights, dailyWeight)
+  }
+  return c.JSON(http.StatusOK, dailyWeights)
+}
+
 func getLatestMonths(c echo.Context, db *sql.DB) error {
   count, err := getCountFromContext(c, 12)
   if err != nil {
@@ -136,6 +161,10 @@ func getCountFromContext(c echo.Context, defCount int) (int, error) {
     return 0, fmt.Errorf("Error converting count parameter %s to a number: %s", countParam, err.Error())
   }
   return n, nil
+}
+
+func dateToString(d int) string {
+  return fmt.Sprintf("%04d-%02d-%02d", d / 10000, (d / 100) % 100, d % 100)
 }
 
 func weightToString(weight int) string {
