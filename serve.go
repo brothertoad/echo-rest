@@ -54,6 +54,9 @@ func doServe(c *cli.Context) error {
   e.GET("/weight/latest", func(c echo.Context) error {
     return getLatest(c, db)
   })
+  e.GET("/weight/lowest", func(c echo.Context) error {
+    return getLowest(c, db)
+  })
   e.GET("/weight/latest-months", func(c echo.Context) error {
     return getLatestMonths(c, db)
   })

@@ -72,6 +72,31 @@ func getLatest(c echo.Context, db *sql.DB) error {
   return c.JSON(http.StatusOK, dailyWeights)
 }
 
+func getLowest(c echo.Context, db *sql.DB) error {
+  count, err := getCountFromContext(c, 30)
+  if err != nil {
+    return c.String(http.StatusBadRequest, err.Error())
+  }
+  dailyWeights := make([]DailyWeight, 0)
+  rows, err := db.Query("select date, weight from weightDaily order by weight asc limit $1", count)
+  if err != nil {
+    return c.String(http.StatusInternalServerError, fmt.Sprintf("Error getting lowest weights: %s", err.Error()))
+  }
+  defer rows.Close()
+  for rows.Next() {
+    var date int
+    var weight int
+    if err := rows.Scan(&date, &weight); err != nil {
+      return c.String(http.StatusInternalServerError, fmt.Sprintf("Error scanning row from dailyWeight: %s", err.Error()))
+    }
+    var dailyWeight DailyWeight
+    dailyWeight.Date = dateToString(date)
+    dailyWeight.Weight = weightToString(weight)
+    dailyWeights = append(dailyWeights, dailyWeight)
+  }
+  return c.JSON(http.StatusOK, dailyWeights)
+}
+
 func getLatestMonths(c echo.Context, db *sql.DB) error {
   count, err := getCountFromContext(c, 12)
   if err != nil {
