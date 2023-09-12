@@ -26,7 +26,10 @@ func addDailyWeight(c echo.Context, db *sql.DB) error {
   dateFromForm := c.FormValue("date")
   weightFromForm := c.FormValue("weight")
   // fmt.Printf("date is %v (%T) and weight is %v (%T)\n", dateFromForm, dateFromForm, weightFromForm, weightFromForm)
-  year, month, day := parseDateString(dateFromForm)
+  year, month, day, err := parseDateString(dateFromForm)
+  if err != nil {
+    return c.String(http.StatusBadRequest, err.Error())
+  }
   weight, err := parseWeightString(weightFromForm)
   if err != nil {
     return c.String(http.StatusBadRequest, err.Error())
@@ -109,11 +112,35 @@ func updateYear(db *sql.DB, year int) {
 }
 
 // String is in format yyyy-mm-dd
-func parseDateString(s string) (int, int, int) {
+func parseDateString(s string) (int, int, int, error) {
+  // Do some checks.
+  for _, ch := range(s) {
+    if (ch < '0' || ch > '9') && ch != '-' {
+      return 0, 0, 0, fmt.Errorf("Date %s is invalid\n", s)
+    }
+  }
+  // We know the string is made up of digits and hyphens, so we know there are
+  // no multi-byte sequences.  So we can just verify the length and make sure
+  // that the first four charaters are not hyphens, the fifth one is, and so forth.
+  if len(s) != 10 {
+    return 0, 0, 0, fmt.Errorf("Date %s is not 10 characters\n", s)
+  }
+  if s[0] == '-' || s[1] == '-' || s[2] == '-' || s[3] == '-' {
+    return 0, 0, 0, fmt.Errorf("Year in %s is invalid\n", s)
+  }
+  if s[5] == '-' || s[6] == '-' {
+    return 0, 0, 0, fmt.Errorf("Month in %s is invalid\n", s)
+  }
+  if s[8] == '-' || s[9] == '-' {
+    return 0, 0, 0, fmt.Errorf("Day in %s is invalid\n", s)
+  }
+  if s[4] != '-' || s[7] != '-' {
+    return 0, 0, 0, fmt.Errorf("Date %s is missing hypens\n", s)
+  }
   year := btu.Atoi(s[0:4])
   month := btu.Atoi(s[5:7])
   day := btu.Atoi(s[8:10])
-  return year, month, day
+  return year, month, day, nil
 }
 
 func parseDate(d int) (int, int, int) {
