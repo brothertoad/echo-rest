@@ -48,7 +48,36 @@ func addDailyWeight(c echo.Context, db *sql.DB) error {
 }
 
 func getLatestMonths(c echo.Context, db *sql.DB) error {
-  return c.String(http.StatusOK, "")
+  count := 12
+  countParam := c.QueryParam("count")
+  if countParam != "" {
+    n, err := strconv.Atoi(countParam)
+    if err == nil {
+      count = n
+    } else {
+      return c.String(http.StatusBadRequest, "count parameter can't be converted to a number")
+    }
+  }
+  avgWeights := make([]AvgWeight, 0)
+  rows, err := db.Query("select month, year, avg from weightSum order by year desc, month desc limit $1", count)
+  if err != nil {
+    return c.String(http.StatusInternalServerError, "Error getting latest months")
+  }
+  defer rows.Close()
+  for rows.Next() {
+    var month int
+    var year int
+    var avg int
+    if err := rows.Scan(&month, &year, &avg); err != nil {
+      return c.String(http.StatusInternalServerError, "Error scanning row")
+    }
+    var avgWeight AvgWeight
+    avgWeight.Month = month
+    avgWeight.Year = year
+    avgWeight.Avg = strconv.Itoa(avg / 10) + "." + strconv.Itoa(avg % 10)
+    avgWeights = append(avgWeights, avgWeight)
+  }
+  return c.JSON(http.StatusOK, avgWeights)
 }
 
 func getMonthAverages(c echo.Context, db *sql.DB, getLowest bool) error {
@@ -70,10 +99,14 @@ func getYearAverages(c echo.Context, db *sql.DB) error {
     }
     var avgWeight AvgWeight
     avgWeight.Year = year
-    avgWeight.Avg = strconv.Itoa(avg / 10) + "." + strconv.Itoa(avg % 10)
+    avgWeight.Avg = weightToString(avg)
     avgWeights = append(avgWeights, avgWeight)
   }
   return c.JSON(http.StatusOK, avgWeights)
+}
+
+func weightToString(weight int) string {
+  return strconv.Itoa(weight / 10) + "." + strconv.Itoa(weight % 10)
 }
 
 ///////////////////////////////////////////
