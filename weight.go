@@ -216,7 +216,7 @@ func updateMonth(db *sql.DB, month, year int, refreshYear bool) {
     total += weight
     count++
   }
-  avg := total / count
+  avg := (total + (count/2)) / count  // the (count/2) is to round
   // Try to update first - if that fails, then insert.
   // Use this order because updates will be much more common then inserts.
   result, err := db.Exec("update weightSum set total = $1, count = $2, avg = $3 where year = $4 and month = $5", total, count, avg, year, month)
@@ -247,7 +247,7 @@ func updateYear(db *sql.DB, year int) {
     cumulativeSum += sum
     total += count
   }
-  avg := cumulativeSum / total
+  avg := (cumulativeSum + (total/2)) / total  // the (total/2) is to round
   // Try to update first - if that fails, then insert.
   // Use this order because updates will be much more common then inserts.
   result, err := db.Exec("update weightSum set total = $1, count = $2, avg = $3 where year = $4 and month = 0", cumulativeSum, total, avg, year)
