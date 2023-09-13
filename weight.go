@@ -109,7 +109,7 @@ func getLatestMonths(c echo.Context, db *sql.DB) error {
     return c.String(http.StatusBadRequest, err.Error())
   }
   avgWeights := make([]AvgWeight, 0)
-  rows, err := db.Query("select month, year, avg from weightSum order by year desc, month desc limit $1", count)
+  rows, err := db.Query("select month, year, avg from weightSum where month <> 0 order by year desc, month desc limit $1", count)
   if err != nil {
     return c.String(http.StatusInternalServerError, "Error getting latest months")
   }
@@ -131,13 +131,13 @@ func getLatestMonths(c echo.Context, db *sql.DB) error {
 }
 
 func getMonthAverages(c echo.Context, db *sql.DB, getLowest bool) error {
-  count, err := getCountFromContext(c, 12)
+  count, err := getCountFromContext(c, 10)
   if err != nil {
     return c.String(http.StatusBadRequest, err.Error())
   }
-  queryString := "select month, year, avg from weightsum order by avg desc limit $1"
+  queryString := "select month, year, avg from weightsum where month <> 0 order by avg desc limit $1"
   if getLowest {
-    queryString = "select month, year, avg from weightsum order by avg asc limit $1"
+    queryString = "select month, year, avg from weightsum where month <> 0 order by avg asc limit $1"
   }
   avgWeights := make([]AvgWeight, 0)
   rows, err := db.Query(queryString, count)
