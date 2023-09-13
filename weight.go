@@ -65,7 +65,10 @@ func getLatest(c echo.Context, db *sql.DB) error {
       return c.String(http.StatusInternalServerError, fmt.Sprintf("Error scanning row from dailyWeight: %s", err.Error()))
     }
     var dailyWeight DailyWeight
-    dailyWeight.Date = dateToString(date)
+    year, month, day := parseDate(date)
+    dailyWeight.Day = day
+    dailyWeight.Month = month
+    dailyWeight.Year = year
     dailyWeight.Weight = weightToString(weight)
     dailyWeights = append(dailyWeights, dailyWeight)
   }
@@ -90,7 +93,10 @@ func getLowest(c echo.Context, db *sql.DB) error {
       return c.String(http.StatusInternalServerError, fmt.Sprintf("Error scanning row from dailyWeight: %s", err.Error()))
     }
     var dailyWeight DailyWeight
-    dailyWeight.Date = dateToString(date)
+    year, month, day := parseDate(date)
+    dailyWeight.Day = day
+    dailyWeight.Month = month
+    dailyWeight.Year = year
     dailyWeight.Weight = weightToString(weight)
     dailyWeights = append(dailyWeights, dailyWeight)
   }

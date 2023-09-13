@@ -17,7 +17,9 @@ type ListResponse struct {
 }
 
 type DailyWeight struct {
-  Date string `json:"date"`
+  Day int `json:"day"`
+  Month int `json:"month"`
+  Year int `json:"year"`
   Weight string `json:"weight"`
 }
 
