@@ -74,9 +74,25 @@ func doServe(c *cli.Context) error {
 }
 
 func getListForREST(c echo.Context, db *sql.DB, randomize bool) error {
-	block := new(BlockRequest)
+  response, err := getListResponse(c, db)
+  if err != nil {
+    return err
+  }
+  if randomize {
+    // logic taken from https://www.calhoun.io/how-to-shuffle-arrays-and-slices-in-go/
+    r := rand.New(rand.NewSource(time.Now().Unix()))
+    for n := len(response.Items); n > 0; n-- {
+      randIndex := r.Intn(n)
+      response.Items[n-1], response.Items[randIndex] = response.Items[randIndex], response.Items[n-1]
+    }
+  }
+	return c.JSON(http.StatusOK, response)
+}
+
+func getListResponse(c echo.Context, db *sql.DB) (*ListResponse, error) {
+  block := new(BlockRequest)
 	if err := c.Bind(block); err != nil {
-		return err
+		return nil, err
 	}
   getBlock(db, block)
   response := new(ListResponse)
@@ -90,15 +106,7 @@ func getListForREST(c echo.Context, db *sql.DB, randomize bool) error {
       response.Items = append(response.Items, item)
     }
   }
-  if randomize {
-    // logic taken from https://www.calhoun.io/how-to-shuffle-arrays-and-slices-in-go/
-    r := rand.New(rand.NewSource(time.Now().Unix()))
-    for n := len(response.Items); n > 0; n-- {
-      randIndex := r.Intn(n)
-      response.Items[n-1], response.Items[randIndex] = response.Items[randIndex], response.Items[n-1]
-    }
-  }
-	return c.JSON(http.StatusOK, response)
+  return response, nil
 }
 
 func getBlockForREST(c echo.Context, db *sql.DB) error {
