@@ -5,6 +5,7 @@ import (
   "fmt"
   "math/rand"
   "net/http"
+  "sort"
   "strings"
   "time"
   _ "github.com/jackc/pgx/stdlib"
@@ -39,6 +40,12 @@ func doServe(c *cli.Context) error {
 	})
   e.GET("/randomlist/:name", func(c echo.Context) error {
 		return getListForREST(c, db, true)
+	})
+  e.GET("/asclist/:name", func(c echo.Context) error {
+		return getAscListForREST(c, db)
+	})
+  e.GET("/desclist/:name", func(c echo.Context) error {
+		return getDescListForREST(c, db)
 	})
 	e.GET("/block/:name", func(c echo.Context) error {
 		return getBlockForREST(c, db)
@@ -87,6 +94,28 @@ func getListForREST(c echo.Context, db *sql.DB, randomize bool) error {
     }
   }
 	return c.JSON(http.StatusOK, response)
+}
+
+func getAscListForREST(c echo.Context, db *sql.DB) error {
+  response, err := getListResponse(c, db)
+  if err != nil {
+    return err
+  }
+  sort.Slice(response.Items, func(i, j int) bool {
+    return response.Items[i] < response.Items[j]
+  })
+  return c.JSON(http.StatusOK, response)
+}
+
+func getDescListForREST(c echo.Context, db *sql.DB) error {
+  response, err := getListResponse(c, db)
+  if err != nil {
+    return err
+  }
+  sort.Slice(response.Items, func(i, j int) bool {
+    return response.Items[j] < response.Items[i]
+  })
+  return c.JSON(http.StatusOK, response)
 }
 
 func getListResponse(c echo.Context, db *sql.DB) (*ListResponse, error) {
