@@ -132,10 +132,28 @@ func getListResponse(c echo.Context, db *sql.DB) (*ListResponse, error) {
   for _, rawItem := range(rawList) {
     item := strings.TrimSpace(rawItem)
     if len(item) > 0 && !strings.HasPrefix(item, "#") {
-      response.Items = append(response.Items, item)
+      response.Items = append(response.Items, parseMarkdown(item))
     }
   }
   return response, nil
+}
+
+func parseMarkdown(s string) string {
+  if !strings.HasPrefix(s, "[") {
+    return s
+  }
+  j := strings.Index(s, "]")
+  if j < 0 {
+    fmt.Printf("Can't find closing bracket in markdown '%s'\n", s)
+    return s // something is wrong here
+  }
+  text := s[1:j]
+  remaining := s[j:]
+  j = strings.Index(remaining, "(") // probably right after closing brace
+  k := strings.Index(remaining, ")")
+  url := remaining[(j+1):k]
+  fmt.Printf("text is '%s', and url is '%s'\n", text, url)
+  return s
 }
 
 func getBlockForREST(c echo.Context, db *sql.DB) error {
