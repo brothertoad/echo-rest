@@ -132,12 +132,13 @@ func getListResponse(c echo.Context, db *sql.DB) (*ListResponse, error) {
   for _, rawItem := range(rawList) {
     item := strings.TrimSpace(rawItem)
     if len(item) > 0 && !strings.HasPrefix(item, "#") {
-      response.Items = append(response.Items, parseMarkdown(item))
+      response.Items = append(response.Items, item)
     }
   }
   return response, nil
 }
 
+// Should return a struct
 func parseMarkdown(s string) string {
   if !strings.HasPrefix(s, "[") {
     return s
@@ -152,8 +153,8 @@ func parseMarkdown(s string) string {
   j = strings.Index(remaining, "(") // probably right after closing brace
   k := strings.Index(remaining, ")")
   url := remaining[(j+1):k]
-  fmt.Printf("text is '%s', and url is '%s'\n", text, url)
-  return s
+  // fmt.Printf("text is '%s', and url is '%s'\n", text, url)
+  return fmt.Sprintf("<a href=\"%s\">%s</a>", url, text)
 }
 
 func getBlockForREST(c echo.Context, db *sql.DB) error {
