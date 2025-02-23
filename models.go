@@ -16,6 +16,17 @@ type ListResponse struct {
   ModTime time.Time `json:"modTime" form:"modTime" param:"modTime"`
 }
 
+type Link struct {
+  Text string `json:"text"`
+  URL string `json:"url"`
+}
+
+type LinkListResponse struct {
+  Name string `json:"name" form:"name" param:"name"`
+  Link []Link `json:"links" form:"links" param:"links"`
+  ModTime time.Time `json:"modTime" form:"modTime" param:"modTime"`
+}
+
 type DailyWeight struct {
   Day int `json:"day"`
   Month int `json:"month"`

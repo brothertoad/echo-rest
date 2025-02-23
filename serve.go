@@ -47,6 +47,9 @@ func doServe(c *cli.Context) error {
   e.GET("/desclist/:name", func(c echo.Context) error {
 		return getDescListForREST(c, db)
 	})
+  e.GET("/linklist/:name", func(c echo.Context) error {
+		return getLinkListForREST(c, db)
+	})
 	e.GET("/block/:name", func(c echo.Context) error {
 		return getBlockForREST(c, db)
 	})
@@ -118,6 +121,21 @@ func getDescListForREST(c echo.Context, db *sql.DB) error {
   return c.JSON(http.StatusOK, response)
 }
 
+func getLinkListForREST(c echo.Context, db *sql.DB) error {
+  response, err := getListResponse(c, db)
+  if err != nil {
+    return err
+  }
+  var linkResponse LinkListResponse
+  linkResponse.Name = response.Name
+  linkResponse.ModTime = response.ModTime
+  linkResponse.Link = make([]Link, 0, len(response.Items))
+  for _, item := range(response.Items) {
+    linkResponse.Link = append(linkResponse.Link, parseLink(item))
+  }
+  return c.JSON(http.StatusOK, linkResponse)
+}
+
 func getListResponse(c echo.Context, db *sql.DB) (*ListResponse, error) {
   block := new(BlockRequest)
 	if err := c.Bind(block); err != nil {
@@ -138,23 +156,21 @@ func getListResponse(c echo.Context, db *sql.DB) (*ListResponse, error) {
   return response, nil
 }
 
-// Should return a struct
-func parseMarkdown(s string) string {
-  if !strings.HasPrefix(s, "[") {
-    return s
-  }
-  j := strings.Index(s, "]")
+// Assume text and URL, in that order, separated by a vertical bar.
+func parseLink(s string) Link {
+  var link Link
+  j := strings.Index(s, "|")
   if j < 0 {
-    fmt.Printf("Can't find closing bracket in markdown '%s'\n", s)
-    return s // something is wrong here
+    fmt.Printf("Can't find separator in link '%s'\n", s)
+    link.Text = s
+    return link // something is wrong here
   }
-  text := s[1:j]
-  remaining := s[j:]
-  j = strings.Index(remaining, "(") // probably right after closing brace
-  k := strings.Index(remaining, ")")
-  url := remaining[(j+1):k]
-  // fmt.Printf("text is '%s', and url is '%s'\n", text, url)
-  return fmt.Sprintf("<a href=\"%s\">%s</a>", url, text)
+  text := s[0:j]
+  url := s[(j+1):]
+  fmt.Printf("text is '%s', and url is '%s'\n", text, url)
+  link.Text = text
+  link.URL = url
+  return link
 }
 
 func getBlockForREST(c echo.Context, db *sql.DB) error {
