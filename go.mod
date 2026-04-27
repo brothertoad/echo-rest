@@ -1,6 +1,6 @@
 module github.com/brothertoad/echo-rest
 
-go 1.20
+go 1.25
 
 require (
 	github.com/brothertoad/btu v1.4.0
