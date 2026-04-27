@@ -5,6 +5,7 @@ import (
   "fmt"
   "math/rand"
   "net/http"
+  "slices"
   "sort"
   "strings"
   "time"
@@ -47,6 +48,9 @@ func doServe(c *cli.Context) error {
   e.GET("/desclist/:name", func(c echo.Context) error {
 		return getDescListForREST(c, db)
 	})
+  e.GET("/revlist/:name", func(c echo.Context) error {
+    return getRevListForREST(c, db)
+  })
   e.GET("/linklist/:name", func(c echo.Context) error {
 		return getLinkListForREST(c, db)
 	})
@@ -118,6 +122,15 @@ func getDescListForREST(c echo.Context, db *sql.DB) error {
   sort.Slice(response.Items, func(i, j int) bool {
     return response.Items[j] < response.Items[i]
   })
+  return c.JSON(http.StatusOK, response)
+}
+
+func getRevListForREST(c echo.Context, db *sql.DB) error {
+  response, err := getListResponse(c, db)
+  if err != nil {
+    return err
+  }
+  slices.Reverse(response.Items)
   return c.JSON(http.StatusOK, response)
 }
 
