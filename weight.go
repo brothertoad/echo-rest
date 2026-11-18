@@ -23,10 +23,10 @@ var weightCommand = cli.Command {
 
 // from browser: date is 2023-09-08 (string) and weight is 276.0 (string)
 
-func addDailyWeight(c echo.Context, db *sql.DB) error {
+func addDailyWeight(e *echo.Echo, c echo.Context, db *sql.DB) error {
   dateFromForm := c.FormValue("date")
   weightFromForm := c.FormValue("weight")
-  // fmt.Printf("date is %v (%T) and weight is %v (%T)\n", dateFromForm, dateFromForm, weightFromForm, weightFromForm)
+  e.Logger.Printf("date is %v (%T) and weight is %v (%T)\n", dateFromForm, dateFromForm, weightFromForm, weightFromForm)
   year, month, day, err := parseDateString(dateFromForm)
   if err != nil {
     return c.String(http.StatusBadRequest, err.Error())
@@ -39,15 +39,17 @@ func addDailyWeight(c echo.Context, db *sql.DB) error {
   // Try to insert first.  If that fails, try to update.
   _, err = db.Exec("insert into weightDaily (date, weight) values ($1, $2)", date, weight)
   if err != nil {
-    // fmt.Printf("Err from insert is %v\n", err)
+    e.Logger.Printf("Err from insert is %v\n", err)
     _, err := db.Exec("update weightDaily set weight = $1 where date = $2", weight, date)
-    btu.CheckError(err)
+    if err != nil {
+      return c.String(http.StatusInternalServerError, fmt.Sprintf("Error updating (not inserting) weight: %s", err.Error()))
+    }
   }
   updateMonth(db, month, year, true)
   return c.String(http.StatusOK, "")
 }
 
-func getLatest(c echo.Context, db *sql.DB) error {
+func getLatest(e *echo.Echo, c echo.Context, db *sql.DB) error {
   count, err := getCountFromContext(c, 30)
   if err != nil {
     return c.String(http.StatusBadRequest, err.Error())
@@ -75,7 +77,7 @@ func getLatest(c echo.Context, db *sql.DB) error {
   return c.JSON(http.StatusOK, dailyWeights)
 }
 
-func getLowest(c echo.Context, db *sql.DB) error {
+func getLowest(e *echo.Echo, c echo.Context, db *sql.DB) error {
   count, err := getCountFromContext(c, 30)
   if err != nil {
     return c.String(http.StatusBadRequest, err.Error())
@@ -103,7 +105,7 @@ func getLowest(c echo.Context, db *sql.DB) error {
   return c.JSON(http.StatusOK, dailyWeights)
 }
 
-func getLatestMonths(c echo.Context, db *sql.DB) error {
+func getLatestMonths(e *echo.Echo, c echo.Context, db *sql.DB) error {
   count, err := getCountFromContext(c, 12)
   if err != nil {
     return c.String(http.StatusBadRequest, err.Error())
@@ -130,7 +132,7 @@ func getLatestMonths(c echo.Context, db *sql.DB) error {
   return c.JSON(http.StatusOK, avgWeights)
 }
 
-func getMonthAverages(c echo.Context, db *sql.DB, getLowest bool) error {
+func getMonthAverages(e *echo.Echo, c echo.Context, db *sql.DB, getLowest bool) error {
   count, err := getCountFromContext(c, 10)
   if err != nil {
     return c.String(http.StatusBadRequest, err.Error())
@@ -161,7 +163,7 @@ func getMonthAverages(c echo.Context, db *sql.DB, getLowest bool) error {
   return c.JSON(http.StatusOK, avgWeights)
 }
 
-func getYearAverages(c echo.Context, db *sql.DB) error {
+func getYearAverages(e *echo.Echo, c echo.Context, db *sql.DB) error {
   avgWeights := make([]AvgWeight, 0)
   rows, err := db.Query("select year, avg from weightSum where month = 0 order by year desc")
   if err != nil {

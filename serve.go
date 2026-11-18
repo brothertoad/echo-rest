@@ -63,25 +63,25 @@ func doServe(c *cli.Context) error {
 
   // routes for weight
   e.POST("/weight/daily/add", func(c echo.Context) error {
-    return addDailyWeight(c, db)
+    return addDailyWeight(e, c, db)
   })
   e.GET("/weight/latest", func(c echo.Context) error {
-    return getLatest(c, db)
+    return getLatest(e, c, db)
   })
   e.GET("/weight/lowest", func(c echo.Context) error {
-    return getLowest(c, db)
+    return getLowest(e, c, db)
   })
   e.GET("/weight/latest-months", func(c echo.Context) error {
-    return getLatestMonths(c, db)
+    return getLatestMonths(e, c, db)
   })
   e.GET("/weight/month-averages/low", func(c echo.Context) error {
-    return getMonthAverages(c, db, true)
+    return getMonthAverages(e, c, db, true)
   })
   e.GET("/weight/month-averages/high", func(c echo.Context) error {
-    return getMonthAverages(c, db, false)
+    return getMonthAverages(e, c, db, false)
   })
   e.GET("/weight/year-averages", func(c echo.Context) error {
-    return getYearAverages(c, db)
+    return getYearAverages(e, c, db)
   })
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", port)))
   return nil
