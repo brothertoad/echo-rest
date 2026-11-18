@@ -37,28 +37,28 @@ func doServe(c *cli.Context) error {
 
   // routes for blocks
   e.GET("/list/:name", func(c echo.Context) error {
-		return getListForREST(c, db, false)
+		return getListForREST(e, c, db, false)
 	})
   e.GET("/randomlist/:name", func(c echo.Context) error {
-		return getListForREST(c, db, true)
+		return getListForREST(e, c, db, true)
 	})
   e.GET("/asclist/:name", func(c echo.Context) error {
-		return getAscListForREST(c, db)
+		return getAscListForREST(e, c, db)
 	})
   e.GET("/desclist/:name", func(c echo.Context) error {
-		return getDescListForREST(c, db)
+		return getDescListForREST(e, c, db)
 	})
   e.GET("/revlist/:name", func(c echo.Context) error {
-    return getRevListForREST(c, db)
+    return getRevListForREST(e, c, db)
   })
   e.GET("/linklist/:name", func(c echo.Context) error {
-		return getLinkListForREST(c, db)
+		return getLinkListForREST(e, c, db)
 	})
 	e.GET("/block/:name", func(c echo.Context) error {
-		return getBlockForREST(c, db)
+		return getBlockForREST(e, c, db)
 	})
 	e.POST("/block", func(c echo.Context) error {
-		return putBlockForREST(c, db)
+		return putBlockForREST(e, c, db)
 	})
 
   // routes for weight
@@ -87,7 +87,7 @@ func doServe(c *cli.Context) error {
   return nil
 }
 
-func getListForREST(c echo.Context, db *sql.DB, randomize bool) error {
+func getListForREST(e *echo.Echo, c echo.Context, db *sql.DB, randomize bool) error {
   response, err := getListResponse(c, db)
   if err != nil {
     return err
@@ -103,7 +103,7 @@ func getListForREST(c echo.Context, db *sql.DB, randomize bool) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func getAscListForREST(c echo.Context, db *sql.DB) error {
+func getAscListForREST(e *echo.Echo, c echo.Context, db *sql.DB) error {
   response, err := getListResponse(c, db)
   if err != nil {
     return err
@@ -114,7 +114,7 @@ func getAscListForREST(c echo.Context, db *sql.DB) error {
   return c.JSON(http.StatusOK, response)
 }
 
-func getDescListForREST(c echo.Context, db *sql.DB) error {
+func getDescListForREST(e *echo.Echo, c echo.Context, db *sql.DB) error {
   response, err := getListResponse(c, db)
   if err != nil {
     return err
@@ -125,7 +125,7 @@ func getDescListForREST(c echo.Context, db *sql.DB) error {
   return c.JSON(http.StatusOK, response)
 }
 
-func getRevListForREST(c echo.Context, db *sql.DB) error {
+func getRevListForREST(e *echo.Echo, c echo.Context, db *sql.DB) error {
   response, err := getListResponse(c, db)
   if err != nil {
     return err
@@ -134,7 +134,7 @@ func getRevListForREST(c echo.Context, db *sql.DB) error {
   return c.JSON(http.StatusOK, response)
 }
 
-func getLinkListForREST(c echo.Context, db *sql.DB) error {
+func getLinkListForREST(e *echo.Echo, c echo.Context, db *sql.DB) error {
   response, err := getListResponse(c, db)
   if err != nil {
     return err
@@ -144,7 +144,7 @@ func getLinkListForREST(c echo.Context, db *sql.DB) error {
   linkResponse.ModTime = response.ModTime
   linkResponse.Link = make([]Link, 0, len(response.Items))
   for _, item := range(response.Items) {
-    linkResponse.Link = append(linkResponse.Link, parseLink(item))
+    linkResponse.Link = append(linkResponse.Link, parseLink(e, item))
   }
   return c.JSON(http.StatusOK, linkResponse)
 }
@@ -170,23 +170,23 @@ func getListResponse(c echo.Context, db *sql.DB) (*ListResponse, error) {
 }
 
 // Assume text and URL, in that order, separated by a vertical bar.
-func parseLink(s string) Link {
+func parseLink(e *echo.Echo, s string) Link {
   var link Link
   j := strings.Index(s, "|")
   if j < 0 {
-    fmt.Printf("Can't find separator in link '%s'\n", s)
+    e.Logger.Printf("Can't find separator in link '%s'\n", s)
     link.Text = s
     return link // something is wrong here
   }
   text := s[0:j]
   url := s[(j+1):]
-  fmt.Printf("text is '%s', and url is '%s'\n", text, url)
+  e.Logger.Printf("text is '%s', and url is '%s'\n", text, url)
   link.Text = text
   link.URL = url
   return link
 }
 
-func getBlockForREST(c echo.Context, db *sql.DB) error {
+func getBlockForREST(e *echo.Echo, c echo.Context, db *sql.DB) error {
 	block := new(BlockRequest)
 	if err := c.Bind(block); err != nil {
 		return err
@@ -195,7 +195,7 @@ func getBlockForREST(c echo.Context, db *sql.DB) error {
 	return c.JSON(http.StatusOK, block)
 }
 
-func putBlockForREST(c echo.Context, db *sql.DB) error {
+func putBlockForREST(e *echo.Echo, c echo.Context, db *sql.DB) error {
 	block := new(BlockRequest)
 	if err := c.Bind(block); err != nil {
 		return err
